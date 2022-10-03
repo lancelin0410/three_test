@@ -14,7 +14,7 @@ export default {
   name: 'App',
 	data() {
 		return {
-			isUserInteracting: false,
+			// isUserInteracting: false,
 			// onPointerDownMouseX: 0, 
 			// onPointerDownMouseY: 0,
 			// lon: 0, 
@@ -33,6 +33,7 @@ export default {
 			camera: null,
 			sceneOrtho: null,
 			cameraOrtho: null,
+			labels: [],
 			geometry: null,
 			texture: null,
 			material: null,
@@ -70,31 +71,16 @@ export default {
 			this.cameraOrtho.position = new THREE.Vector3(0, 0, 10);
 			this.sceneOrtho = new THREE.Scene();
 
-			let _labels = [];
 			const _labelsOri =  [
-				{ position: { lon: -72.00, lat: 9.00 }, logoUrl: '', text: '蓝窗户' },
-				{ position: { lon: 114.12, lat: 69.48 }, logoUrl: '', text: '一片云彩' },
+				{ position: { lon: -72.00, lat: 9.00 }, logoUrl: '', text: '藍窗戶' },
+				{ position: { lon: 114.12, lat: 69.48 }, logoUrl: '', text: '一片雲彩' },
 				{ position: { lon: 132.48, lat: -12.24 }, logoUrl: '', text: '大海' }
 			];
 
+			for (var i = 0; i < _labelsOri.length; i++) this.labels.push(this.createLabelSprite(this.sceneOrtho, _labelsOri[i].text, _labelsOri[i].position));
 
-			for (var i = 0; i < _labelsOri.length; i++) {
-				_labels.push(this.createLabelSprite(this.sceneOrtho, _labelsOri[i].text, _labelsOri[i].position));
-				var wp = this.geoPosition2World(_labels[i].pos.lon, _labels[i].pos.lat);
-				var sp = this.worldPosition2Screen(wp, this.camera);
-				var test = wp.clone();
-				test.project(this.camera);
-				if (test.x > -1 && test.x < 1 && test.y > -1 && test.y < 1 && test.z > -1 && test.z < 1) {
-					var metrics = _labels[i].context.measureText(_labels[i].name);
-					var width = metrics.width * 3.5;
-					_labels[i].sprite.scale.set(400, 150, 1.0);
-					_labels[i].sprite.position.set(sp.x + width, sp.y - 40, 1);
-				}
-				else {
-					_labels[i].sprite.scale.set(1.0, 1.0, 1.0);
-					_labels[i].sprite.position.set(0, 0, 0);
-				}
-			}
+			this.addSprites();
+
 			// 半球光
 			// let light = new THREE.HemisphereLight(0xffffff);
 			// light.position.set(0, 40, 0);
@@ -112,10 +98,10 @@ export default {
 			// helper	
 			const cameraHelper = new THREE.CameraHelper( this.camera );
 			this.scene.add(cameraHelper);
-			const cameraOrthoHelper = new THREE.CameraHelper( this.cameraOrtho );
-			this.scene.add(cameraOrthoHelper);
 			const axisHelper = new THREE.AxesHelper(1100);
 			this.scene.add(axisHelper);
+			const cameraOrthoHelper = new THREE.CameraHelper( this.cameraOrtho );
+			this.scene.add(cameraOrthoHelper);
 
 			// 建立 球體 & 全景貼圖
 			this.geometry = new THREE.SphereGeometry( 500, 60, 40 );
@@ -178,7 +164,7 @@ export default {
 			const context1 = canvas1.getContext('2d');
 			const metrics = context1.measureText(name);
 			const width = metrics.width * 1.5;
-			context1.font = "20px 微軟正黑體";
+			context1.font = "14px 微軟正黑體";
 			context1.fillStyle = "rgba(0,0,0,0.95)";
 			context1.fillRect(0, 0, width + 8, 20 + 8);
 			context1.fillStyle = "rgba(0,0,0,0.2)";
@@ -203,15 +189,6 @@ export default {
 			sceneOrtho.add(label.sprite);
 			return label;
 		},
-		calPosition() {
-			_lat = Math.max(-85, Math.min(85, _lat));
-			const phi = THREE.MathUtils.degToRad(90 - _lat);
-			const theta = THREE.MathUtils.degToRad(_lon);
-			this.camera.target.x = _pRadius * Math.sin(phi) * Math.cos(theta);
-			this.camera.target.y = _pRadius * Math.cos(phi);
-			this.camera.target.z = _pRadius * Math.sin(phi) * Math.sin(theta);
-			this.camera.lookAt(this.camera.target);
-		},
 		addSprites() {
 			if (typeof (_sprites) != "undefined") {
 				for (var i = 0; i < _sprites.length; i++) {
@@ -229,21 +206,21 @@ export default {
 					}
 				}
 			}
-			if (typeof (_labels) != "undefined") {
-				for (var i = 0; i < _labels.length; i++) {
-					var wp = this.geoPosition2World(_labels[i].pos.lon, _labels[i].pos.lat);
+			if (typeof (this.labels) != "undefined") {
+				for (var i = 0; i < this.labels.length; i++) {
+					var wp = this.geoPosition2World(this.labels[i].pos.lon, this.labels[i].pos.lat);
 					var sp = this.worldPosition2Screen(wp, this.camera);
 					var test = wp.clone();
 					test.project(this.camera);
 					if (test.x > -1 && test.x < 1 && test.y > -1 && test.y < 1 && test.z > -1 && test.z < 1) {
-						var metrics = _labels[i].context.measureText(_labels[i].name);
+						var metrics = this.labels[i].context.measureText(this.labels[i].name);
 						var width = metrics.width * 3.5;
-						_labels[i].sprite.scale.set(400, 150, 1.0);
-						_labels[i].sprite.position.set(sp.x + width, sp.y - 40, 1);
+						this.labels[i].sprite.scale.set(400, 150, 1.0);
+						this.labels[i].sprite.position.set(sp.x + width, sp.y - 40, 1);
 					}
 					else {
-						_labels[i].sprite.scale.set(1.0, 1.0, 1.0);
-						_labels[i].sprite.position.set(0, 0, 0);
+						this.labels[i].sprite.scale.set(1.0, 1.0, 1.0);
+						this.labels[i].sprite.position.set(0, 0, 0);
 					}
 				}
 			}
@@ -303,11 +280,20 @@ export default {
 
 			this.drawLine(points, '#03A9F4');
 
-			// let points2 = [
-			// 	new THREE.Vector3(0, -100, 500),
-			// 	new THREE.Vector3(0, -100, -500)
-			// ];
-			// this.drawLine(points2, '#FF9800');
+			const points2 = [
+				new THREE.Vector3(0, -100, 500),
+				new THREE.Vector3(0, -100, -500)
+			];
+
+			this.drawLine(points2, '#FF9800');
+
+			// const spherical = new THREE.Spherical(500);
+			// const line2 = new THREE.Vector3(0, 0, -500).sub(new THREE.Vector3(0, 0, 500));
+			// const line2Pos = this.worldPosition2Screen(line2, this.camera);
+			// line2.project(this.camera);
+			// console.log(line2);
+			// console.log(line2.setFromSpherical(spherical));
+
 		},
 		drawLine(points, color) {
 			const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -315,7 +301,8 @@ export default {
 			const line = new MeshLine();
 			line.setGeometry(geometry);
 
-			const material = new MeshLineMaterial({ map: this.texture, color: color, lineWidth: 25, transparent: true, opacity: 0.5 } );
+			const material = new MeshLineMaterial({ map: this.texture, color: color, lineWidth: 15, transparent: true, opacity: 0.5 } );
+			material.side = THREE.DoubleSide;
 
 			const mesh = new THREE.Mesh(line, material);
 			this.scene.add(mesh);
@@ -357,6 +344,7 @@ export default {
 
 			// this.update();
 
+			this.addSprites();
 			this.controls.update();
 			this.renderer.render( this.scene, this.camera );
 			this.renderer.render( this.sceneOrtho, this.cameraOrtho );
